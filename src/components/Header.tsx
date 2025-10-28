@@ -24,7 +24,7 @@ export function Header() {
 
         {/* Action Buttons */}
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="lg" className="gap-2" onClick={() => window.location.href = '/'}>
+          <Button variant="outline" size="lg" className="gap-2" onClick={() => window.location.href = '/login'}>
             <LogIn className="w-4 h-4" />
             로그인
           </Button>
