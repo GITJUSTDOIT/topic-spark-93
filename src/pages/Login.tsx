@@ -1,17 +1,31 @@
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Asterisk } from "lucide-react";
+import { Header } from "@/components/Header";
+import { Asterisk, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
+  const navigate = useNavigate();
+
   return (
-    <main className="w-full h-screen items-center justify-center flex p-6 gap-6 bg-background">
-      <div className="w-100 max-w-100 flex flex-col px-6 gap-6">
-        <div className="flex flex-col">
-          <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">
-            로그인
-          </h4>
-          <p className="text-muted-foreground">구글 로그인으로 바로 시작하기</p>
-        </div>
+    <div className="w-full min-h-screen bg-background">
+      <Header />
+      <main className="w-full h-[calc(100vh-80px)] items-center justify-center flex p-6 gap-6 relative">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute top-6 left-6"
+          onClick={() => navigate(-1)}
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <div className="w-100 max-w-100 flex flex-col px-6 gap-6">
+          <div className="flex flex-col">
+            <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">
+              로그인
+            </h4>
+            <p className="text-muted-foreground">구글 로그인으로 바로 시작하기</p>
+          </div>
         <div className="grid gap-3">
           {/* 소셜 로그인 */}
           <Button type="button" variant="secondary" className="gap-2">
@@ -54,6 +68,7 @@ export default function Login() {
           </div>
         </div>
       </div>
-    </main>
+      </main>
+    </div>
   );
 }
