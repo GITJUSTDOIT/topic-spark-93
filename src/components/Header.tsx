@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react';
+import { Search, LogIn, PenSquare, User } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 
@@ -24,13 +24,16 @@ export function Header() {
 
         {/* Action Buttons */}
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="lg" onClick={() => window.location.href = '/'}>
+          <Button variant="outline" size="lg" className="gap-2" onClick={() => window.location.href = '/'}>
+            <LogIn className="w-4 h-4" />
             로그인
           </Button>
-          <Button size="lg" className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity" onClick={() => window.location.href = '/create'}>
+          <Button size="lg" className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity gap-2" onClick={() => window.location.href = '/create'}>
+            <PenSquare className="w-4 h-4" />
             글쓰기
           </Button>
-          <Button variant="ghost" size="lg" onClick={() => window.location.href = '/mypage'}>
+          <Button variant="secondary" size="lg" className="gap-2" onClick={() => window.location.href = '/mypage'}>
+            <User className="w-4 h-4" />
             닉네임
           </Button>
         </div>

@@ -17,15 +17,17 @@ export function CategorySidebar() {
       {/* 홈, 인기 메뉴 */}
       <div className="flex flex-col gap-1">
         <Button
-          variant="ghost"
-          className="justify-start gap-3 hover:bg-accent transition-colors"
+          variant="secondary"
+          className="justify-start gap-3 font-medium hover:bg-secondary/80 transition-colors"
+          onClick={() => window.location.href = '/'}
         >
           <Home className="w-5 h-5" />
           <span>홈</span>
         </Button>
         <Button
           variant="ghost"
-          className="justify-start gap-3 hover:bg-accent transition-colors"
+          className="justify-start gap-3 hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
+          onClick={() => window.location.href = '/'}
         >
           <TrendingUp className="w-5 h-5" />
           <span>인기</span>
