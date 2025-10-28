@@ -24,13 +24,13 @@ export function Header() {
 
         {/* Action Buttons */}
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="lg">
+          <Button variant="outline" size="lg" onClick={() => window.location.href = '/'}>
             로그인
           </Button>
-          <Button size="lg" className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity">
+          <Button size="lg" className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity" onClick={() => window.location.href = '/create'}>
             글쓰기
           </Button>
-          <Button variant="ghost" size="lg">
+          <Button variant="ghost" size="lg" onClick={() => window.location.href = '/mypage'}>
             닉네임
           </Button>
         </div>
