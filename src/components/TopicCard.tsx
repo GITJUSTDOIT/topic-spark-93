@@ -1,8 +1,10 @@
 import { Badge } from './ui/badge';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Avatar, AvatarFallback } from './ui/avatar';
+import { useNavigate } from 'react-router-dom';
 
 interface TopicCardProps {
+  id?: string;
   title: string;
   content: string;
   author: string;
@@ -11,9 +13,14 @@ interface TopicCardProps {
   isHot?: boolean;
 }
 
-export function TopicCard({ title, content, author, date, tags, isHot }: TopicCardProps) {
+export function TopicCard({ id = '1', title, content, author, date, tags, isHot }: TopicCardProps) {
+  const navigate = useNavigate();
+
   return (
-    <Card className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-border bg-gradient-to-b from-card to-secondary/30">
+    <Card 
+      className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-border bg-gradient-to-b from-card to-secondary/30"
+      onClick={() => navigate(`/post/${id}`)}
+    >
       <CardHeader className="pb-3">
         <div className="flex items-center gap-3 mb-3">
           <Avatar className="w-10 h-10 border-2 border-primary/10">

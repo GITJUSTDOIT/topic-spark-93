@@ -19,16 +19,16 @@ export default function Login() {
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <div className="w-100 max-w-100 flex flex-col px-6 gap-6">
-          <div className="flex flex-col">
-            <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">
+        <div className="w-[400px] max-w-[90vw] flex flex-col px-6 gap-8">
+          <div className="flex flex-col gap-2">
+            <h1 className="scroll-m-20 text-4xl font-bold tracking-tight">
               로그인
-            </h4>
-            <p className="text-muted-foreground">구글 로그인으로 바로 시작하기</p>
+            </h1>
+            <p className="text-lg text-muted-foreground">구글 로그인으로 바로 시작하기</p>
           </div>
-        <div className="grid gap-3">
+          <div className="grid gap-4">
           {/* 소셜 로그인 */}
-          <Button type="button" variant="secondary" className="gap-2">
+          <Button type="button" variant="secondary" size="lg" className="gap-2 h-12 text-base">
             <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24">
               <path
                 fill="currentColor"
@@ -50,17 +50,17 @@ export default function Login() {
             구글 로그인
           </Button>
           {/* 이용자 약관동의 형식 */}
-          <div className="grid gap-2">
-            <div className="grid gap-2">
-              <div className="flex items-center gap-1">
-                <Asterisk size={14} className="text-[#F96859]" />
-                필수 동의항목
+          <div className="grid gap-3 pt-2">
+            <div className="grid gap-3">
+              <div className="flex items-center gap-1.5">
+                <Asterisk size={16} className="text-[#F96859]" />
+                <span className="text-base font-medium">필수 동의항목</span>
               </div>
               <div className="flex flex-col">
                 <div className="w-full flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Checkbox className="w-[18px] h-[18px]" />
-                    <span className="text-sm">서비스 이용약관 동의</span>
+                  <div className="flex items-center gap-3">
+                    <Checkbox className="w-5 h-5" />
+                    <span className="text-base">서비스 이용약관 동의</span>
                   </div>
                 </div>
               </div>
