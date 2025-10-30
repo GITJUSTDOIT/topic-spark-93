@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { CategorySidebar } from '@/components/CategorySidebar';
 import { Button } from '@/components/ui/button';
@@ -6,9 +6,38 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+// 🔗 백엔드 연결: API 서비스
+import { getMyProfile } from '@/services/api';
 
 export default function MyPage() {
   const [activeTab, setActiveTab] = useState('posts');
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  // 🔗 백엔드 연결: GET /me - 내 프로필 조회
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const data = await getMyProfile();
+        setProfile(data);
+      } catch (error) {
+        console.error('프로필 조회 실패:', error);
+        // 샘플 데이터 사용
+        setProfile({
+          id: 'user1',
+          email: 'example@pukyong.ac.kr',
+          displayName: '자전 왕고',
+          nicknameColor: 'Gray',
+          status: 'ACTIVE',
+          avatarUrl: null,
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   const myPosts = [
     {
@@ -44,20 +73,22 @@ export default function MyPage() {
               <div className="flex items-start gap-4">
                 <Avatar className="w-20 h-20 border-4 border-primary/20">
                   <AvatarFallback className="bg-primary/10 text-primary font-bold text-2xl">
-                    자
+                    {profile?.displayName?.[0] || '사'}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <h2 className="text-2xl font-bold mb-1">자전 왕고</h2>
+                  <h2 className="text-2xl font-bold mb-1">
+                    {profile?.displayName || '사용자'}
+                  </h2>
                   <p className="text-sm text-muted-foreground mb-2">자연과학학</p>
                   <div className="flex gap-2 mb-3">
                     <Badge variant="secondary" className="rounded-full">
-                      전공자: 기게자(사.가)
+                      상태: {profile?.status || 'ACTIVE'}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <span className="text-muted-foreground">이메일</span>
-                    <span>@ cukyong.ac.kr</span>
+                    <span>{profile?.email || 'example@pukyong.ac.kr'}</span>
                   </div>
                 </div>
                 <Button variant="outline">프로필 수정</Button>

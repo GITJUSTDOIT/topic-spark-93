@@ -7,14 +7,19 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { X } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+// 🔗 백엔드 연결: API 서비스
+import { createPost } from '@/services/api';
 
 export default function CreatePost() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('');
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [hashtagInput, setHashtagInput] = useState('');
   const [content, setContent] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAddHashtag = () => {
     if (hashtagInput.trim() && !hashtags.includes(hashtagInput.trim())) {
@@ -27,10 +32,43 @@ export default function CreatePost() {
     setHashtags(hashtags.filter(t => t !== tag));
   };
 
-  const handleSubmit = () => {
-    // 게시글 작성 로직
-    console.log({ title, category, hashtags, content });
-    navigate('/');
+  // 🔗 백엔드 연결: POST /posts - 게시글 작성
+  const handleSubmit = async () => {
+    if (!title.trim() || !content.trim()) {
+      toast({
+        title: '필수 항목을 입력해주세요',
+        description: '제목과 내용은 필수입니다.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const postData = {
+        title: title.trim(),
+        content: content.trim(),
+        tags: hashtags,
+      };
+
+      await createPost(postData);
+      
+      toast({
+        title: '게시글 작성 완료',
+        description: '게시글이 성공적으로 작성되었습니다.',
+      });
+      
+      navigate('/');
+    } catch (error) {
+      console.error('게시글 작성 실패:', error);
+      toast({
+        title: '게시글 작성 실패',
+        description: '다시 시도해주세요.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -118,14 +156,25 @@ export default function CreatePost() {
 
               {/* 버튼들 */}
               <div className="flex gap-3 justify-end mt-4">
-                <Button variant="outline" onClick={() => navigate(-1)}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate(-1)}
+                  disabled={isSubmitting}
+                >
                   취소
                 </Button>
-                <Button variant="secondary" onClick={handleSubmit}>
+                <Button 
+                  variant="secondary" 
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                >
                   임시저장
                 </Button>
-                <Button onClick={handleSubmit}>
-                  게시글 작성
+                <Button 
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? '작성 중...' : '게시글 작성'}
                 </Button>
               </div>
             </div>
