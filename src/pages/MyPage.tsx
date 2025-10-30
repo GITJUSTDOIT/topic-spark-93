@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { CategorySidebar } from '@/components/CategorySidebar';
 import { Button } from '@/components/ui/button';
@@ -6,13 +7,25 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { toast } from 'sonner';
 // 🔗 백엔드 연결: API 서비스
 import { getMyProfile } from '@/services/api';
+// 🔒 보안: Zustand store 사용
+import useAuthStore from '@/stores/authStore';
 
 export default function MyPage() {
+  const navigate = useNavigate();
+  const { clearAuth } = useAuthStore();
   const [activeTab, setActiveTab] = useState('posts');
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  // 🔒 보안: 로그아웃 처리 - store 초기화
+  const handleLogout = () => {
+    clearAuth();
+    toast.success('로그아웃되었습니다');
+    navigate('/login');
+  };
 
   // 🔗 백엔드 연결: GET /me - 내 프로필 조회
   useEffect(() => {
@@ -91,7 +104,10 @@ export default function MyPage() {
                     <span>{profile?.email || 'example@pukyong.ac.kr'}</span>
                   </div>
                 </div>
-                <Button variant="outline">프로필 수정</Button>
+                <div className="flex gap-2">
+                  <Button variant="outline">프로필 수정</Button>
+                  <Button variant="outline" onClick={handleLogout}>로그아웃</Button>
+                </div>
               </div>
             </CardHeader>
           </Card>

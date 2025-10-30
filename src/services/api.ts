@@ -1,4 +1,5 @@
 import axios from 'axios';
+import useAuthStore from '@/stores/authStore';
 
 // API 기본 URL 설정
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
@@ -12,9 +13,10 @@ const api = axios.create({
 });
 
 // 🔗 백엔드 연결: 요청 인터셉터 (Bearer 토큰 자동 추가)
+// 🔒 보안: Zustand store에서 토큰 가져오기 (localStorage 대신)
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken');
+    const token = useAuthStore.getState().accessToken;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -30,8 +32,8 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // 인증 실패 시 로그인 페이지로 이동
-      localStorage.removeItem('accessToken');
+      // 🔒 보안: 인증 실패 시 store 초기화 후 로그인 페이지로 이동
+      useAuthStore.getState().clearAuth();
       window.location.href = '/login';
     }
     return Promise.reject(error);
