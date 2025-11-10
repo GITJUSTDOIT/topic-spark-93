@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { handleGoogleCallback } from "@/services/api";
+import { loginWithGoogle } from "@/services/api";
 import useAuthStore from "@/stores/authStore";
 import { toast } from "sonner";
 
@@ -21,7 +21,8 @@ export default function AuthCallback() {
 
       try {
         // 🔗 백엔드 연결: OAuth2 콜백 처리
-        const data = await handleGoogleCallback(code);
+        const redirectUri = `${window.location.origin}/auth/callback`;
+        const data = await loginWithGoogle(code, redirectUri);
         
         // 🔒 보안: Zustand store에 토큰 저장 (localStorage 대신)
         setAuth(data.accessToken, data.user);
