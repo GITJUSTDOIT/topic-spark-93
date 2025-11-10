@@ -7,9 +7,11 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 // 🔗 백엔드 연결: API 서비스
-import { getMyProfile } from '@/services/api';
+import { getMyProfile, updateMyProfile, getMyScraps } from '@/services/api';
 // 🔒 보안: Zustand store 사용
 import useAuthStore from '@/stores/authStore';
 
@@ -19,6 +21,10 @@ export default function MyPage() {
   const [activeTab, setActiveTab] = useState('posts');
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [scrapedPosts, setScrapedPosts] = useState<any[]>([]);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editDisplayName, setEditDisplayName] = useState('');
+  const [editAvatarUrl, setEditAvatarUrl] = useState('');
 
   // 🔒 보안: 로그아웃 처리 - store 초기화
   const handleLogout = () => {
@@ -51,6 +57,42 @@ export default function MyPage() {
 
     fetchProfile();
   }, []);
+
+  // 🔗 백엔드 연결: GET /posts/scraps - 내가 스크랩한 게시글 목록
+  useEffect(() => {
+    const fetchScraps = async () => {
+      try {
+        const data = await getMyScraps();
+        setScrapedPosts(data);
+      } catch (error) {
+        console.error('스크랩 목록 조회 실패:', error);
+      }
+    };
+
+    if (activeTab === 'saved') {
+      fetchScraps();
+    }
+  }, [activeTab]);
+
+  // 🔗 백엔드 연결: PUT /me - 내 프로필 수정
+  const handleUpdateProfile = async () => {
+    try {
+      await updateMyProfile({
+        displayName: editDisplayName,
+        avatarUrl: editAvatarUrl,
+      });
+      
+      // 프로필 다시 조회
+      const updatedProfile = await getMyProfile();
+      setProfile(updatedProfile);
+      
+      setIsEditDialogOpen(false);
+      toast.success('프로필이 수정되었습니다');
+    } catch (error) {
+      console.error('프로필 수정 실패:', error);
+      toast.error('프로필 수정에 실패했습니다');
+    }
+  };
 
   const myPosts = [
     {
@@ -105,7 +147,43 @@ export default function MyPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline">프로필 수정</Button>
+                  <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                          setEditDisplayName(profile?.displayName || '');
+                          setEditAvatarUrl(profile?.avatarUrl || '');
+                        }}
+                      >
+                        프로필 수정
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>프로필 수정</DialogTitle>
+                      </DialogHeader>
+                      <div className="flex flex-col gap-4 py-4">
+                        <div className="flex flex-col gap-2">
+                          <label className="text-sm font-medium">닉네임</label>
+                          <Input
+                            value={editDisplayName}
+                            onChange={(e) => setEditDisplayName(e.target.value)}
+                            placeholder="닉네임을 입력하세요"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <label className="text-sm font-medium">프로필 이미지 URL</label>
+                          <Input
+                            value={editAvatarUrl}
+                            onChange={(e) => setEditAvatarUrl(e.target.value)}
+                            placeholder="이미지 URL을 입력하세요"
+                          />
+                        </div>
+                        <Button onClick={handleUpdateProfile}>저장</Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                   <Button variant="outline" onClick={handleLogout}>로그아웃</Button>
                 </div>
               </div>
@@ -197,8 +275,43 @@ export default function MyPage() {
             </TabsContent>
 
             <TabsContent value="saved" className="mt-6">
-              <div className="text-center py-12 text-muted-foreground">
-                스크랩한 글이 여기에 표시됩니다
+              <div className="flex flex-col gap-4">
+                {scrapedPosts.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    스크랩한 글이 없습니다
+                  </div>
+                ) : (
+                  scrapedPosts.map((post) => (
+                    <Card 
+                      key={post.id} 
+                      className="hover:shadow-lg transition-shadow cursor-pointer"
+                      onClick={() => navigate(`/post/${post.id}`)}
+                    >
+                      <CardContent className="p-6">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h3 className="font-bold text-lg mb-2">{post.title}</h3>
+                            <div className="flex gap-2 mb-3">
+                              {post.tags?.map((tag: string, index: number) => (
+                                <Badge key={index} variant="secondary" className="rounded-full">
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span>{post.authorName || '작성자'}</span>
+                              <span>•</span>
+                              <span>{new Date(post.createdAt).toLocaleDateString('ko-KR')}</span>
+                              <span>•</span>
+                              <span>👍 {post.likeCount || 0}</span>
+                              <span>💬 {post.commentCount || 0}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
               </div>
             </TabsContent>
           </Tabs>

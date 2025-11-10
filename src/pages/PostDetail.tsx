@@ -6,21 +6,40 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { ThumbsUp, MessageCircle, ArrowLeft } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, MessageCircle, ArrowLeft, Bookmark, Edit, Trash2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 // 🔗 백엔드 연결: API 서비스
-import { getPost, getPostComments, createComment } from '@/services/api';
+import { 
+  getPost, 
+  getPostComments, 
+  createComment, 
+  togglePostLike, 
+  togglePostDislike,
+  togglePostScrap,
+  getIsScraped,
+  toggleCommentLike,
+  toggleCommentDislike,
+  deletePost,
+  deleteComment,
+  updateComment
+} from '@/services/api';
+// 🔒 보안: Zustand store 사용
+import useAuthStore from '@/stores/authStore';
 
 export default function PostDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuthStore();
   const [post, setPost] = useState<any>(null);
   const [comment, setComment] = useState('');
   const [comments, setComments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isScraped, setIsScraped] = useState(false);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editingCommentText, setEditingCommentText] = useState('');
 
   // 🔗 백엔드 연결: GET /posts/{id} - 게시글 상세 조회
   useEffect(() => {
@@ -80,6 +99,81 @@ export default function PostDetail() {
     fetchComments();
   }, [id]);
 
+  // 🔗 백엔드 연결: GET /posts/{postId}/scrap - 스크랩 여부 확인
+  useEffect(() => {
+    const checkScrapStatus = async () => {
+      if (!id) return;
+      
+      try {
+        const scrapData = await getIsScraped(id);
+        setIsScraped(scrapData.isScraped);
+      } catch (error) {
+        console.error('스크랩 상태 조회 실패:', error);
+      }
+    };
+
+    checkScrapStatus();
+  }, [id]);
+
+  // 🔗 백엔드 연결: POST /posts/{postId}/like - 좋아요 토글
+  const handleLike = async () => {
+    if (!id) return;
+    
+    try {
+      await togglePostLike(id);
+      // 게시글 다시 조회하여 업데이트된 좋아요 수 반영
+      const updatedPost = await getPost(id);
+      setPost(updatedPost);
+      toast({ title: '좋아요를 눌렀습니다' });
+    } catch (error) {
+      console.error('좋아요 실패:', error);
+      toast({ title: '좋아요 실패', variant: 'destructive' });
+    }
+  };
+
+  // 🔗 백엔드 연결: POST /posts/{postId}/dislike - 싫어요 토글
+  const handleDislike = async () => {
+    if (!id) return;
+    
+    try {
+      await togglePostDislike(id);
+      const updatedPost = await getPost(id);
+      setPost(updatedPost);
+      toast({ title: '싫어요를 눌렀습니다' });
+    } catch (error) {
+      console.error('싫어요 실패:', error);
+      toast({ title: '싫어요 실패', variant: 'destructive' });
+    }
+  };
+
+  // 🔗 백엔드 연결: POST /posts/{postId}/scrap - 스크랩 토글
+  const handleScrap = async () => {
+    if (!id) return;
+    
+    try {
+      await togglePostScrap(id);
+      setIsScraped(!isScraped);
+      toast({ title: isScraped ? '스크랩을 취소했습니다' : '스크랩했습니다' });
+    } catch (error) {
+      console.error('스크랩 실패:', error);
+      toast({ title: '스크랩 실패', variant: 'destructive' });
+    }
+  };
+
+  // 🔗 백엔드 연결: DELETE /posts/{id} - 게시글 삭제
+  const handleDeletePost = async () => {
+    if (!id || !confirm('정말 삭제하시겠습니까?')) return;
+    
+    try {
+      await deletePost(id);
+      toast({ title: '게시글이 삭제되었습니다' });
+      navigate('/');
+    } catch (error) {
+      console.error('게시글 삭제 실패:', error);
+      toast({ title: '삭제 실패', variant: 'destructive' });
+    }
+  };
+
   // 🔗 백엔드 연결: POST /posts/{postId}/comments - 댓글 작성
   const handleCommentSubmit = async () => {
     if (!comment.trim() || !id) return;
@@ -103,6 +197,60 @@ export default function PostDetail() {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // 🔗 백엔드 연결: POST /comments/{commentId}/like - 댓글 좋아요 토글
+  const handleCommentLike = async (commentId: string) => {
+    try {
+      await toggleCommentLike(commentId);
+      // 댓글 목록 다시 조회
+      const updatedComments = await getPostComments(id!);
+      setComments(updatedComments);
+    } catch (error) {
+      console.error('댓글 좋아요 실패:', error);
+    }
+  };
+
+  // 🔗 백엔드 연결: POST /comments/{commentId}/dislike - 댓글 싫어요 토글
+  const handleCommentDislike = async (commentId: string) => {
+    try {
+      await toggleCommentDislike(commentId);
+      const updatedComments = await getPostComments(id!);
+      setComments(updatedComments);
+    } catch (error) {
+      console.error('댓글 싫어요 실패:', error);
+    }
+  };
+
+  // 🔗 백엔드 연결: DELETE /comments/{id} - 댓글 삭제
+  const handleDeleteComment = async (commentId: string) => {
+    if (!confirm('정말 삭제하시겠습니까?')) return;
+    
+    try {
+      await deleteComment(commentId);
+      setComments(comments.filter(c => c.id !== commentId));
+      toast({ title: '댓글이 삭제되었습니다' });
+    } catch (error) {
+      console.error('댓글 삭제 실패:', error);
+      toast({ title: '삭제 실패', variant: 'destructive' });
+    }
+  };
+
+  // 🔗 백엔드 연결: PATCH /comments/{id} - 댓글 수정
+  const handleUpdateComment = async (commentId: string) => {
+    if (!editingCommentText.trim()) return;
+    
+    try {
+      await updateComment(commentId, editingCommentText.trim());
+      const updatedComments = await getPostComments(id!);
+      setComments(updatedComments);
+      setEditingCommentId(null);
+      setEditingCommentText('');
+      toast({ title: '댓글이 수정되었습니다' });
+    } catch (error) {
+      console.error('댓글 수정 실패:', error);
+      toast({ title: '수정 실패', variant: 'destructive' });
     }
   };
 
@@ -176,9 +324,20 @@ export default function PostDetail() {
                   </p>
                 </div>
               </div>
-              <Button variant="outline" size="sm">
-                팔로우
-              </Button>
+              <div className="flex gap-2">
+                {user?.id === post.authorId && (
+                  <>
+                    <Button variant="outline" size="sm" className="gap-1">
+                      <Edit className="w-4 h-4" />
+                      수정
+                    </Button>
+                    <Button variant="outline" size="sm" className="gap-1" onClick={handleDeletePost}>
+                      <Trash2 className="w-4 h-4" />
+                      삭제
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
 
             <h1 className="text-2xl font-bold mb-6 leading-tight">
@@ -190,13 +349,30 @@ export default function PostDetail() {
             </div>
 
             <div className="flex items-center gap-6 text-muted-foreground pt-4 border-t">
-              <button className="flex items-center gap-2 hover:text-primary transition-colors">
+              <button 
+                className="flex items-center gap-2 hover:text-primary transition-colors"
+                onClick={handleLike}
+              >
                 <ThumbsUp className="w-5 h-5" />
-                <span className="font-medium">10</span>
+                <span className="font-medium">{post.likeCount || 0}</span>
+              </button>
+              <button 
+                className="flex items-center gap-2 hover:text-destructive transition-colors"
+                onClick={handleDislike}
+              >
+                <ThumbsDown className="w-5 h-5" />
+                <span className="font-medium">{post.dislikeCount || 0}</span>
               </button>
               <button className="flex items-center gap-2 hover:text-primary transition-colors">
                 <MessageCircle className="w-5 h-5" />
-                <span className="font-medium">2</span>
+                <span className="font-medium">{comments.length}</span>
+              </button>
+              <button 
+                className={`flex items-center gap-2 transition-colors ${isScraped ? 'text-primary' : 'hover:text-primary'}`}
+                onClick={handleScrap}
+              >
+                <Bookmark className={`w-5 h-5 ${isScraped ? 'fill-primary' : ''}`} />
+                <span className="font-medium">스크랩</span>
               </button>
             </div>
           </div>
@@ -243,7 +419,7 @@ export default function PostDetail() {
                     </Avatar>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="font-bold">작성자</span>
+                        <span className="font-bold">{commentItem.authorName || '작성자'}</span>
                         <span className="text-sm text-muted-foreground">
                           {new Date(commentItem.createdAt).toLocaleDateString('ko-KR', {
                             year: 'numeric',
@@ -257,17 +433,66 @@ export default function PostDetail() {
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-foreground mb-3 leading-relaxed">
-                        {commentItem.body}
-                      </p>
+                      
+                      {editingCommentId === commentItem.id ? (
+                        <div className="flex flex-col gap-2 mb-3">
+                          <Textarea
+                            value={editingCommentText}
+                            onChange={(e) => setEditingCommentText(e.target.value)}
+                            className="min-h-[80px]"
+                          />
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => handleUpdateComment(commentItem.id)}>
+                              저장
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => {
+                              setEditingCommentId(null);
+                              setEditingCommentText('');
+                            }}>
+                              취소
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-foreground mb-3 leading-relaxed">
+                          {commentItem.body}
+                        </p>
+                      )}
+                      
                       <div className="flex items-center gap-4 text-sm">
-                        <button className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors">
+                        <button 
+                          className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors"
+                          onClick={() => handleCommentLike(commentItem.id)}
+                        >
                           <ThumbsUp className="w-4 h-4" />
-                          <span className="font-medium">0</span>
+                          <span className="font-medium">{commentItem.likeCount || 0}</span>
                         </button>
-                        <button className="text-muted-foreground hover:text-primary transition-colors font-medium">
-                          답글
+                        <button 
+                          className="flex items-center gap-1.5 text-muted-foreground hover:text-destructive transition-colors"
+                          onClick={() => handleCommentDislike(commentItem.id)}
+                        >
+                          <ThumbsDown className="w-4 h-4" />
+                          <span className="font-medium">{commentItem.dislikeCount || 0}</span>
                         </button>
+                        {user?.id === commentItem.authorId && (
+                          <>
+                            <button 
+                              className="text-muted-foreground hover:text-primary transition-colors font-medium"
+                              onClick={() => {
+                                setEditingCommentId(commentItem.id);
+                                setEditingCommentText(commentItem.body);
+                              }}
+                            >
+                              수정
+                            </button>
+                            <button 
+                              className="text-muted-foreground hover:text-destructive transition-colors font-medium"
+                              onClick={() => handleDeleteComment(commentItem.id)}
+                            >
+                              삭제
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
